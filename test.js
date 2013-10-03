@@ -2,6 +2,7 @@ var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
 var os = require('os')
+var Stream = require('stream')
 
 var saveTo = require('./')
 
@@ -136,6 +137,26 @@ describe('Save To', function () {
     }, function (err) {
       assert.ok(err)
 
+      setTimeout(function () {
+        try {
+          fs.statSync(location)
+        } catch (err) {
+          done()
+        }
+      }, 10)
+    })
+  })
+
+  it('should delete the resulting file if stream errors', function (done) {
+    var location = createPath()
+    var source = new Stream.PassThrough()
+
+    setImmediate(function () {
+      source.emit('error', new Error())
+    })
+
+    saveTo(source, location, function (err) {
+      assert.ok(err)
       setTimeout(function () {
         try {
           fs.statSync(location)

@@ -52,9 +52,7 @@ module.exports = function (stream, destination, options, callback) {
       err.status = 413
       err.received = received
       err.limit = limit
-      cleanup()
-      removeFile()
-      callback(err)
+      onFinish(err)
     }
   }
 
@@ -64,27 +62,24 @@ module.exports = function (stream, destination, options, callback) {
       err.status = 400
       err.received = received
       err.expected = expected
-      cleanup()
-      removeFile()
-      callback(err)
+      onFinish(err)
     }
   }
 
   function onFinish(err) {
-    cleanup()
+    cleanup(err)
     callback(err)
   }
 
-  function cleanup() {
+  function cleanup(err) {
+    if (err)
+      fs.unlink(destination, noop)
+
     stream.removeListener('data', onData)
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onFinish)
     writeStream.removeListener('error', onFinish)
     writeStream.removeListener('close', onFinish)
-  }
-
-  function removeFile() {
-    fs.unlink(destination, noop)
   }
 }
 
