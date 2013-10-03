@@ -80,6 +80,8 @@ module.exports = function (stream, destination, options, callback) {
     stream.removeListener('error', onFinish)
     writeStream.removeListener('error', onFinish)
     writeStream.removeListener('close', onFinish)
+    
+    stream = writeStream = null
   }
 }
 
