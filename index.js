@@ -68,7 +68,7 @@ module.exports = function (stream, destination, options, callback) {
 
   function onFinish(err) {
     cleanup(err)
-    callback(err)
+    callback(err, destination)
   }
 
   function cleanup(err) {

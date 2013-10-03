@@ -35,8 +35,9 @@ describe('Save To', function () {
   it('should work without options', function (done) {
     var location = createPath()
 
-    saveTo(createStream(), location, function (err) {
+    saveTo(createStream(), location, function (err, loc) {
       assert.ifError(err)
+      assert.equal(location, loc)
       checkFile(location)
       done()
     })
