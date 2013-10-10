@@ -1,4 +1,4 @@
-# Save to ______ [![Build Status](https://travis-ci.org/jonathanong/save-to.png)](https://travis-ci.org/jonathanong/save-to)
+# Save to ______ [![Build Status](https://travis-ci.org/stream-utils/save-to.png)](https://travis-ci.org/stream-utils/save-to)
 
 Save a stream to a file.
 
