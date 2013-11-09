@@ -1,8 +1,8 @@
 var fs = require('fs')
 
-module.exports = function (stream, destination, options, callback) {
+module.exports = function (stream, destination, options, done) {
   if (typeof options === 'function') {
-    callback = options
+    done = options
     options = {}
   }
 
@@ -26,7 +26,9 @@ module.exports = function (stream, destination, options, callback) {
     err.expected = expected
     err.limit = limit
     stream.resume() // dump stream
-    callback(err)
+    process.nextTick(function () {
+      done(err)
+    })
     return
   }
 
@@ -42,7 +44,9 @@ module.exports = function (stream, destination, options, callback) {
   writeStream.once('error', onFinish)
   writeStream.once('close', onFinish)
 
-  return writeStream
+  return function (fn) {
+    done = fn
+  }
 
   function onData(chunk) {
     received += chunk.length
@@ -68,7 +72,9 @@ module.exports = function (stream, destination, options, callback) {
 
   function onFinish(err) {
     cleanup(err)
-    callback(err, destination)
+    process.nextTick(function () {
+      done(err, destination)
+    })
   }
 
   function cleanup(err) {
@@ -80,7 +86,7 @@ module.exports = function (stream, destination, options, callback) {
     stream.removeListener('error', onFinish)
     writeStream.removeListener('error', onFinish)
     writeStream.removeListener('close', onFinish)
-    
+
     stream = writeStream = null
   }
 }
