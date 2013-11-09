@@ -29,7 +29,7 @@ module.exports = function (stream, destination, options, done) {
     process.nextTick(function () {
       done(err)
     })
-    return
+    return defer
   }
 
   var writeStream = stream.pipe(fs.createWriteStream(destination))
@@ -44,7 +44,9 @@ module.exports = function (stream, destination, options, done) {
   writeStream.once('error', onFinish)
   writeStream.once('close', onFinish)
 
-  return function (fn) {
+  return defer
+
+  function defer(fn) {
     done = fn
   }
 
