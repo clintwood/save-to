@@ -3,6 +3,7 @@ var fs = require('fs')
 var path = require('path')
 var os = require('os')
 var Stream = require('stream')
+var co = require('co')
 
 var saveTo = require('./')
 
@@ -41,6 +42,15 @@ describe('Save To', function () {
       checkFile(location)
       done()
     })
+  })
+
+  it('should work as a yieldable', function (done) {
+    co(function* () {
+      var location = createPath()
+      var loc = yield saveTo(createStream(), location)
+      assert.equal(location, loc)
+      checkFile(location)
+    })(done)
   })
 
   it('should work with destination as an option', function (done) {
@@ -106,6 +116,24 @@ describe('Save To', function () {
         done()
       }
     })
+  })
+
+  it('should not release zalgo when expected > limit', function (done) {
+    co(function* () {
+      var location = createPath()
+      try {
+        yield saveTo(createStream(), location, {
+          expected: length,
+          limit: length - 1
+        })
+        throw new Error()
+      } catch (err) {
+        assert.equal(err.status, 413)
+        try {
+          fs.statSync(location)
+        } catch (err) {}
+      }
+    })(done)
   })
 
   it('should throw on incorrect expected length', function (done) {

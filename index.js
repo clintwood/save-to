@@ -11,6 +11,9 @@ module.exports = function (stream, destination, options, done) {
     destination = options.destination
   }
 
+  if (!options)
+    options = {}
+
   if (typeof destination !== 'string')
     throw new TypeError('Destination must be a string')
 
@@ -74,9 +77,7 @@ module.exports = function (stream, destination, options, done) {
 
   function onFinish(err) {
     cleanup(err)
-    process.nextTick(function () {
-      done(err, destination)
-    })
+    done(err, destination)
   }
 
   function cleanup(err) {
