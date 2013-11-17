@@ -95,11 +95,7 @@ module.exports = function (stream, destination, options, done) {
 
   function cleanup(err) {
     if (err) {
-      if (typeof stream.destroy === 'function')
-        stream.destroy()
-      else if (typeof stream.close === 'function')
-        stream.close()
-
+      writeStream.destroy()
       fs.unlink(destination, noop)
     }
 
