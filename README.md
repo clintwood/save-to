@@ -2,10 +2,6 @@
 
 Save a stream to a file.
 
-You may also be interested in:
-
-- [raw-body](https://github.com/jonathanong/raw-body)
-
 ## API
 
 ```js
@@ -22,7 +18,7 @@ var stream = fs.createReadStream('some file.txt')
 The options are:
 
 - `destination` - if you don't specify destination as an argument.
-- `expected` - expected byte length. Throws an error if it does not match the stream's length.
+- `length` - expected byte length. Throws an error if it does not match the stream's length.
 - `limit` - maximum byte length. Throws an error if the stream is larger than this size.
 
 ## License

@@ -2,11 +2,13 @@ var fs = require('fs')
 
 module.exports = function (stream, destination, options, done) {
   if (typeof options === 'function') {
+    // [stream, destination, done]
     done = options
     options = {}
   }
 
   if (typeof destination === 'object') {
+    // [stream, options, [done]]
     options = destination
     destination = options.destination
   }
@@ -20,13 +22,13 @@ module.exports = function (stream, destination, options, done) {
   if (!destination)
     throw new Error('Destination must be defined.')
 
-  var expected = toInt(options.expected)
+  var length = toInt(options.length)
   var limit = toInt(options.limit)
 
-  if (expected !== null && limit !== null && expected > limit) {
+  if (length !== null && limit !== null && length > limit) {
     var err = new Error('request entity too large')
     err.status = 413
-    err.expected = expected
+    err.length = length
     err.limit = limit
     stream.resume() // dump stream
     process.nextTick(function () {
@@ -38,13 +40,15 @@ module.exports = function (stream, destination, options, done) {
   var writeStream = stream.pipe(fs.createWriteStream(destination))
 
   var received = 0
-  if (expected !== null || limit !== null)
+  if (length !== null || limit !== null)
     stream.on('data', onData)
-  if (expected !== null)
+  if (length !== null)
     stream.once('end', onEnd)
 
+  stream.once('close', onClose)
   stream.once('error', onFinish)
   writeStream.once('error', onFinish)
+  // shouldn't ever emit 'close' without `finish`.
   writeStream.once('close', onFinish)
 
   return defer
@@ -65,12 +69,21 @@ module.exports = function (stream, destination, options, done) {
     }
   }
 
+  // If a 'close' event is emitted before the
+  // readable stream has ended,
+  // then we assume that it was prematurely closed
+  // and we cleanup the file appropriately.
+  function onClose() {
+    if (!stream._readableState.ended)
+      cleanup(true)
+  }
+
   function onEnd() {
-    if (received !== expected) {
+    if (received !== length) {
       var err = new Error('request size did not match content length')
       err.status = 400
       err.received = received
-      err.expected = expected
+      err.length = length
       onFinish(err)
     }
   }
@@ -81,11 +94,18 @@ module.exports = function (stream, destination, options, done) {
   }
 
   function cleanup(err) {
-    if (err)
+    if (err) {
+      if (typeof stream.destroy === 'function')
+        stream.destroy()
+      else if (typeof stream.close === 'function')
+        stream.close()
+
       fs.unlink(destination, noop)
+    }
 
     stream.removeListener('data', onData)
     stream.removeListener('end', onEnd)
+    stream.removeListener('close', onClose)
     stream.removeListener('error', onFinish)
     writeStream.removeListener('error', onFinish)
     writeStream.removeListener('close', onFinish)
@@ -95,9 +115,7 @@ module.exports = function (stream, destination, options, done) {
 }
 
 function toInt(x) {
-  return isNaN(x)
-    ? null
-    : parseInt(x, 10)
+  return isNaN(x) ? null : parseInt(x, 10)
 }
 
 function noop() {}

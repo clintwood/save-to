@@ -65,11 +65,11 @@ describe('Save To', function () {
     })
   })
 
-  it('should work with expected length', function (done) {
+  it('should work with length', function (done) {
     var location = createPath()
 
     saveTo(createStream(), location, {
-      expected: length
+      length: length
     }, function (err) {
       assert.ifError(err)
       checkFile(location)
@@ -89,11 +89,11 @@ describe('Save To', function () {
     })
   })
 
-  it('should work with limit and expected length', function (done) {
+  it('should work with limit and length', function (done) {
     var location = createPath()
 
     saveTo(createStream(), location, {
-      expected: length,
+      length: length,
       limit: length + 1
     }, function (err) {
       assert.ifError(err)
@@ -102,11 +102,11 @@ describe('Save To', function () {
     })
   })
 
-  it('should check options for limit and expected length', function (done) {
+  it('should check options for limit and length', function (done) {
     var location = createPath()
 
     saveTo(createStream(), location, {
-      expected: length,
+      length: length,
       limit: length -1
     }, function (err) {
       assert.equal(err.status, 413)
@@ -118,12 +118,12 @@ describe('Save To', function () {
     })
   })
 
-  it('should not release zalgo when expected > limit', function (done) {
+  it('should not release zalgo when length > limit', function (done) {
     co(function* () {
       var location = createPath()
       try {
         yield saveTo(createStream(), location, {
-          expected: length,
+          length: length,
           limit: length - 1
         })
         throw new Error()
@@ -136,11 +136,11 @@ describe('Save To', function () {
     })(done)
   })
 
-  it('should throw on incorrect expected length', function (done) {
+  it('should throw on incorrect length', function (done) {
     var location = createPath()
 
     saveTo(createStream(), location, {
-      expected: 1
+      length: 1
     }, function (err) {
       assert.equal(err.status, 400)
       done()
@@ -162,7 +162,7 @@ describe('Save To', function () {
     var location = createPath()
 
     saveTo(createStream(), location, {
-      expected: 0
+      length: 0
     }, function (err) {
       assert.ok(err)
 
