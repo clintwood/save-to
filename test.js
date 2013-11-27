@@ -2,12 +2,13 @@ var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
 var os = require('os')
-var Stream = require('stream')
 var co = require('co')
+var PassThrough = require('stream').PassThrough
+  || require('readable-stream').PassThrough
 
 var saveTo = require('./')
 
-var tmpdir = path.join(os.tmpdir(), '/save-to')
+var tmpdir = path.join((os.tmpdir || os.tmpDir)(), '/save-to')
 
 try {
   fs.mkdirSync(tmpdir)
@@ -178,9 +179,9 @@ describe('Save To', function () {
 
   it('should delete the resulting file if stream errors', function (done) {
     var location = createPath()
-    var source = new Stream.PassThrough()
+    var source = new PassThrough()
 
-    setImmediate(function () {
+    process.nextTick(function () {
       source.emit('error', new Error())
     })
 

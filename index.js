@@ -1,4 +1,5 @@
 var fs = require('fs')
+var bytes = require('bytes')
 
 module.exports = function (stream, destination, options, done) {
   if (typeof options === 'function') {
@@ -22,16 +23,46 @@ module.exports = function (stream, destination, options, done) {
   if (!destination)
     throw new Error('Destination must be defined.')
 
-  var length = toInt(options.length)
-  var limit = toInt(options.limit)
+  // convert the limit to an integer
+  var limit = null
+  if (typeof options.limit === 'number')
+    limit = options.limit
+  if (typeof options.limit === 'string')
+    limit = bytes(options.limit)
 
-  if (length !== null && limit !== null && length > limit) {
-    var err = new Error('request entity too large')
-    err.status = 413
-    err.length = length
-    err.limit = limit
-    stream.resume() // dump stream
+  // convert the expected length to an integer
+  var length = null
+  if (!isNaN(options.length))
+    length = parseInt(options.length, 10)
+
+  // check the length and limit options.
+  // note: we intentionally leave the stream paused,
+  // so users should handle the stream themselves.
+  if (limit !== null && length !== null && length > limit) {
+    if (typeof stream.pause === 'function')
+      stream.pause()
+
     process.nextTick(function () {
+      var err = makeError('request entity too large', 'entity.too.large')
+      err.status = err.statusCode = 413
+      err.length = err.expected = length
+      err.limit = limit
+      done(err)
+    })
+    return defer
+  }
+
+  var state = stream._readableState
+  // streams2+: assert the stream encoding is buffer.
+  if (state && state.encoding !== null) {
+    if (typeof stream.pause === 'function')
+      stream.pause()
+
+    process.nextTick(function () {
+      var err = makeError('stream encoding should not be set',
+        'stream.encoding.set')
+      // developer error
+      err.status = err.statusCode = 500
       done(err)
     })
     return defer
@@ -61,8 +92,8 @@ module.exports = function (stream, destination, options, done) {
     received += chunk.length
 
     if (limit !== null && received > limit) {
-      var err = new Error('request entity too large')
-      err.status = 413
+      var err = makeError('request entity too large', 'entity.too.large')
+      err.status = err.statusCode = 413
       err.received = received
       err.limit = limit
       onFinish(err)
@@ -74,16 +105,17 @@ module.exports = function (stream, destination, options, done) {
   // then we assume that it was prematurely closed
   // and we cleanup the file appropriately.
   function onClose() {
-    if (!stream._readableState.ended)
+    if (state && !state.ended)
       cleanup(true)
   }
 
   function onEnd() {
     if (received !== length) {
-      var err = new Error('request size did not match content length')
-      err.status = 400
+      var err = makeError('request size did not match content length',
+        'request.size.invalid')
+      err.status = err.statusCode = 400
       err.received = received
-      err.length = length
+      err.length = err.expected = length
       onFinish(err)
     }
   }
@@ -110,8 +142,19 @@ module.exports = function (stream, destination, options, done) {
   }
 }
 
-function toInt(x) {
-  return isNaN(x) ? null : parseInt(x, 10)
-}
-
 function noop() {}
+
+// to create serializable errors you must re-set message so
+// that it is enumerable and you must re configure the type
+// property so that is writable and enumerable
+function makeError(message, type) {
+  var error = new Error()
+  error.message = message
+  Object.defineProperty(error, 'type', {
+    value: type,
+    enumerable: true,
+    writable: true,
+    configurable: true
+  })
+  return error
+}
