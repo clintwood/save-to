@@ -7,13 +7,17 @@ Save a stream to a file.
 ```js
 var saveTo = require('save-to')
 var stream = fs.createReadStream('some file.txt')
+
+saveTo(stream, 'destination.txt', function (err, destination) {
+  if (err) throw err
+})
 ```
 
 ## saveTo(stream [, destination] [, options], callback)
 
 - `stream` is the source stream, for example a request.
 - `destination` is the path where the stream will be saved.
-- `callback` only returns with an error, if any.
+- `callback(err, destination)`
 
 The options are:
 
