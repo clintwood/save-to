@@ -1,5 +1,10 @@
 var fs = require('fs')
+var os = require('os')
+var path = require('path')
 var bytes = require('bytes')
+
+// stupid node
+var tmp = (os.tmpdir || os.tmpDir)()
 
 module.exports = function (stream, destination, options, done) {
   if (typeof options === 'function') {
@@ -68,7 +73,8 @@ module.exports = function (stream, destination, options, done) {
     return defer
   }
 
-  var writeStream = stream.pipe(fs.createWriteStream(destination))
+  var temporaryDestination = path.join(tmp, uid())
+  var writeStream = stream.pipe(fs.createWriteStream(temporaryDestination))
 
   var received = 0
   if (length !== null || limit !== null)
@@ -121,6 +127,13 @@ module.exports = function (stream, destination, options, done) {
   }
 
   function onFinish(err) {
+    if (err)
+      finish(err)
+    else
+      fs.rename(temporaryDestination, destination, finish)
+  }
+
+  function finish(err) {
     cleanup(err)
     done(err, destination)
   }
@@ -128,7 +141,7 @@ module.exports = function (stream, destination, options, done) {
   function cleanup(err) {
     if (err) {
       writeStream.destroy()
-      fs.unlink(destination, noop)
+      fs.unlink(temporaryDestination, noop)
     }
 
     stream.removeListener('data', onData)
@@ -140,6 +153,10 @@ module.exports = function (stream, destination, options, done) {
 
     stream = writeStream = null
   }
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2)
 }
 
 function noop() {}
