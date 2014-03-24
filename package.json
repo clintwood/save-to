@@ -18,7 +18,7 @@
     "url": "https://github.com/stream-utils/save-to/issues"
   },
   "dependencies": {
-    "bytes": "~0.2.1"
+    "bytes": "~0.3.0"
   },
   "devDependencies": {
     "co": "*",
