@@ -66,6 +66,18 @@ describe('Save To', function () {
     })
   })
 
+  it('should work with destination on other device & new dir', function (done) {
+    var location = './results/test.js'
+
+    saveTo(createStream(), {
+      destination: location
+    }, function (err) {
+      assert.ifError(err)
+      checkFile(location)
+      done()
+    })
+  })
+
   it('should work with length', function (done) {
     var location = createPath()
 

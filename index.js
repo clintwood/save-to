@@ -2,6 +2,7 @@ var fs = require('fs')
 var os = require('os')
 var path = require('path')
 var bytes = require('bytes')
+var mv = require('mv');
 
 // stupid node
 var tmp = (os.tmpdir || os.tmpDir)()
@@ -130,7 +131,8 @@ module.exports = function (stream, destination, options, done) {
     if (err)
       finish(err)
     else
-      fs.rename(temporaryDestination, destination, finish)
+      // mv: handle cross device rename & mkdirp
+      mv(temporaryDestination, destination, { mkdirp: true }, finish);
   }
 
   function finish(err) {
